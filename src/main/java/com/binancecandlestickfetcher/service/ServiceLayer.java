@@ -9,54 +9,43 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class ServiceLayer {
-    //Service methods
 
-    public static long CreateStartTime() {
-
-        //The date for which start of day needs to be found
-        //todo:now will be change with expired time of currency
-        LocalDate localDate = LocalDate.now();
-        //Local date time
-        LocalDateTime startOfDay = localDate.atStartOfDay();
-        //Convert startOfDay to Epoch Time in Local Time Zone
-        Instant instant = startOfDay.atZone(ZoneId.systemDefault()).toInstant();
-        long convertedStartOfDay = instant.toEpochMilli();
-        System.out.println("Start of Day: " + startOfDay);
-        System.out.println("Converted Start of Day: " + convertedStartOfDay);
-        return convertedStartOfDay;
+    //Gets endTime from startTime as LocalDateTime
+    public static LocalDateTime CalculateEndTime(String interval, String startTime, int limit) {
+        LocalDateTime endTime = LocalDateTime.parse(startTime);
+        System.out.println("Start : " + endTime);
+        if (interval == "1m") {
+            return endTime = endTime.plusMinutes(limit);
+        } else if (interval == "5m") {
+            return endTime = endTime.plusMinutes(limit * 5);
+        } else if (interval == "30m") {
+            return endTime = endTime.plusMinutes(limit * 30);
+        } else if (interval == "1h") {
+            return endTime = endTime.plusHours(limit);
+        } else if (interval == "4h") {
+            return endTime = endTime.plusHours(limit * 4);
+        } else if (interval == "1d") {
+            return endTime = endTime.plusDays(limit);
+        } else {
+            System.out.println("End : Invalid internal...");
+            //todo: return BusinessIntegrityException
+            return null;
+        }
     }
 
-    public static long CreateEndTime(long startTime, String interval,int limit) {
-
-        //Get interval Time as Epoch Time
-        long intervalTime = ConvertIntervalToEpochTime(interval,limit);
-        //Add intervalTime to startTime
-        long endTime = startTime + intervalTime;
-        return endTime;
+    //Converts any LocalDateTime to Epoch
+    public static long ConvertLocalTimeToEpoch(LocalDateTime time) {
+        System.out.println("End : " + time);
+        Instant instant = time.atZone(ZoneId.systemDefault()).toInstant();
+        long convertedTime = instant.toEpochMilli();
+        System.out.println("ConvertedTime : " + convertedTime);
+        return convertedTime;
     }
-
-    private static long ConvertIntervalToEpochTime(String interval,int limit) {
-
-        HashMap<String, Integer> intervalMap = new HashMap<String, Integer>();
-        intervalMap.put("1m", 60000);
-        intervalMap.put("5m", 300000);
-        intervalMap.put("30m", 1800000);
-        intervalMap.put("1h", 3600000);
-        intervalMap.put("4h", 14400000);
-        intervalMap.put("1d", 86400000);
-
-        long convertedInterval = intervalMap.get(interval)*limit+1000;
-        return convertedInterval;
-    }
-
 
     //Check files for lastCloseTime
     public void checkLastCloseTime(String filePath) {

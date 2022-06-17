@@ -14,15 +14,10 @@ public class BinanceCandlestickFetcherApplication {
     public static void main(String[] args) {
         SpringApplication.run(BinanceCandlestickFetcherApplication.class, args);
 
-        /*
-        Epoch timestamp: 1654041600
-        Timestamp in milliseconds: 1654041600000
-        Date and time (GMT): Wednesday, 1 June 2022 00:00:00
-*/
-        //long start =1654041600;
-        long startTime= service.CreateStartTime();
-        long endTime= service.CreateEndTime(startTime,"30m",1000);
-        System.out.println("EndTime: "+endTime);
+        String startTime= "2018-05-28T03:00:00";
+        String interval ="30m";
+        int limit=1000;
+          service.ConvertLocalTimeToEpoch(service.CalculateEndTime(interval,startTime,limit));
     }
 
 }
