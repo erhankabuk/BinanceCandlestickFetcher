@@ -34,12 +34,19 @@ public class BinanceCandlestickFetcherApplication {
         //apiController.GetDataFromAPI(symbol, startTime, interval, limit);
 
          */
-       // String path=service.createFile("deneme1","asdfasdf");
-       // System.out.println(path);
+        // String path=service.createFile("deneme1","asdfasdf");
+        // System.out.println(path);
+
+        /*
+        //Get Request
         String begin = "2018-05-28T03:00:00";
         LocalDateTime start = LocalDateTime.parse(begin);
-        long startTime = service.ConvertLocalDateTimeToEpoch(start);
-        service.deneme("EOSUSDT",startTime,"1d",1000);
+        long startTime = service.convertLocalDateTimeToEpoch(start);
+        service.deneme("EOSUSDT",startTime,"1d",10);
+        */
+        String s= service.checkFolder("EOSUSDT","1m");
+        System.out.println(s);
+        System.exit(0);
     }
 
 

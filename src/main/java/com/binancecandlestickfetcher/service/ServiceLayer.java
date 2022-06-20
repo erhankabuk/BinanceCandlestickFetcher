@@ -26,22 +26,27 @@ public class ServiceLayer {
     @Autowired
     ApiController apiController;
 
-    //GetData unneccessary
-    public String GetData(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
-        String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
-        System.out.println(response);
-        return response;
-    }
-
+    /*
+        //GetData unneccessary
+        public String GetData(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
+            String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
+            System.out.println(response);
+            return response;
+        }
+    */
     public void deneme(String symbol, long startTime, String interval, int limit) {
         //String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
         //while response!=null;
-        String basePath="C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\";
-        String fileName =basePath+ symbol + interval; // filePAth i bulmak gerek
+        String basePath = "C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\";
+        String fileName = basePath + symbol + interval; // filePAth i bulmak gerek
+
         if (!isFileExist(fileName)) {
             String createdFilePath = createFile(symbol, interval);
             String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
-            saveDataInFile(createdFilePath, response);
+            if (response != null) {
+                checkFolder(symbol, interval);
+                saveDataInFile(createdFilePath, response);
+            }
         } else {
 
             //Get file
@@ -54,9 +59,38 @@ public class ServiceLayer {
 
     }
 
+    public String checkFolder(String symbol, String interval) {
+
+        String fileName = symbol;
+        File file = new File(fileName);
+
+        if (file.exists()) {
+            if (interval == "1d" || interval == "4h") {
+                return file.getAbsolutePath();
+            }
+            String fileNameHourly = symbol + "-" + interval;
+            File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
+            if (!fileHourly.exists()) {
+                fileHourly.mkdirs();
+            }
+            return fileHourly.getAbsolutePath();
+        } else {
+            file.mkdirs();
+
+            if (interval == "1m" || interval == "5m" || interval == "30m" || interval == "1h") {
+                String fileNameHourly = symbol + "-" + interval;
+                File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
+                fileHourly.mkdirs();
+                return fileHourly.getAbsolutePath();
+            }
+
+            return file.getAbsolutePath();
+        }
+    }
+
     //todo: Check access modifier - static
     //Gets endTime from startTime as LocalDateTime
-    public static LocalDateTime CalculateEndTime(String interval, String startTime, int limit) {
+    public static LocalDateTime calculateEndTime(String interval, String startTime, int limit) {
         LocalDateTime endTime = LocalDateTime.parse(startTime);
         System.out.println("Start : " + endTime);
         if (interval == "1m") {
@@ -80,7 +114,7 @@ public class ServiceLayer {
 
     //todo: Check access modifier - static
     //Converts any LocalDateTime to Epoch
-    public static long ConvertLocalDateTimeToEpoch(LocalDateTime time) {
+    public static long convertLocalDateTimeToEpoch(LocalDateTime time) {
         try {
             System.out.println("End : " + time);
             Instant instant = time.atZone(ZoneId.systemDefault()).toInstant();
@@ -122,11 +156,12 @@ public class ServiceLayer {
         try {
             Path path = Paths.get(filePath);
             // file exists and it is not a directory
-            if (Files.exists(path) && !Files.isDirectory(path)) {
+            if (Files.exists(path)) {
                 //todo: check flowchart
                 return true;
             } else {
                 //todo: check flowchart
+
                 return false;
             }
         } catch (Exception e) {
@@ -155,7 +190,10 @@ public class ServiceLayer {
             // slug gibi - koy aralarına
             //eosusdt
             //String fileName = LocalDateTime.now() + symbol + interval;
-            String fileName = symbol + interval;
+//check folderIsExisted
+
+
+            String fileName = symbol + "-" + interval;
             File file = new File(fileName);
 
             file.createNewFile();
