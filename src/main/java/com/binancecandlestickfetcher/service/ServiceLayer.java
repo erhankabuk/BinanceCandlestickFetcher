@@ -23,16 +23,24 @@ import java.time.ZoneId;
 @Service
 public class ServiceLayer {
 
-    public String GetDataFromAPI(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
+    @Autowired
+    ApiController apiController;
+
+
+    public String GetData(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
+   /*
     String url = "https://api.binance.com/api/v3/klines?symbol=" + symbol
             + "&interval=" + interval
             + "&limit=" + limit
             + "&startTime=" + startTime;
     RestTemplate restTemplate = new RestTemplate();
     String response = restTemplate.getForObject(url, String.class);
+    */
+     String response= apiController.GetDataFromAPI(symbol, startTime, interval, limit);
     System.out.println(response);
     return response;
     }
+
 
     //todo: Check access modifier - static
     //Gets endTime from startTime as LocalDateTime

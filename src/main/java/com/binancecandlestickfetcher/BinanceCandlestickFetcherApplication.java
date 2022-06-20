@@ -20,14 +20,15 @@ public class BinanceCandlestickFetcherApplication {
         //Inject ServiceLayer in main method
         ApplicationContext applicationContext = SpringApplication.run(BinanceCandlestickFetcherApplication.class, args);
         ServiceLayer service = applicationContext.getBean(ServiceLayer.class);
+        //ApiController apiController = applicationContext.getBean(ApiController.class);
         String symbol = "EOSUSDT";
         String start = "2018-05-28T03:00:00";
         String interval = "1d";
         int limit = 10;
         //startTime==endTime of start
-        long startTime =service.ConvertLocalTimeToEpoch(service.CalculateEndTime(interval,start,limit));
-       service.GetDataFromAPI(symbol,startTime,interval,limit);
-
+        long startTime = service.ConvertLocalTimeToEpoch(service.CalculateEndTime(interval, start, limit));
+        service.GetData(symbol,startTime,interval,limit);
+        //apiController.GetDataFromAPI(symbol, startTime, interval, limit);
     }
 
 

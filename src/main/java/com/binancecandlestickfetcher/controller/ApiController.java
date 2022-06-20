@@ -1,6 +1,7 @@
 package com.binancecandlestickfetcher.controller;
 
 import com.binancecandlestickfetcher.service.ServiceLayer;
+import com.binancecandlestickfetcher.utility.BusinessIntegrityException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,31 +16,15 @@ import java.net.http.HttpRequest;
 
 @RestController
 public  class ApiController {
-    //HttpRequests
-//Convert JSOn to string in get method
-    @Autowired
-    ServiceLayer serviceLayer;
+//Convert JSON to string in get method
     @GetMapping
-    public  HttpRequest GetData( ) {
-
-        String url = "https://api.binance.com/api/v3/klines?symbol=EOSUSDT&interval=1d&limit=1000&startTime=1527465600000";
+    public String GetDataFromAPI(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
+        String url = "https://api.binance.com/api/v3/klines?symbol=" + symbol
+                + "&interval=" + interval
+                + "&limit=" + limit
+                + "&startTime=" + startTime;
         RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.getForObject(url,HttpRequest.class);
-        /*
-        try {
-            String symbol ="EOSUSDT";
-            URI getUri = new URI("https://api.binance.com/api/v3/klines?symbol="+symbol+"&interval="+interval+"&limit="+limit+"$startTime="+startTime);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(getUri)
-                    .GET()
-                    .build();
-
-            return request;
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-        */
-
+         return restTemplate.getForObject(url, String.class);
     }
 
 
