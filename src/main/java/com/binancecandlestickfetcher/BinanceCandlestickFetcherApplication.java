@@ -11,6 +11,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+
 
 @SpringBootApplication
 public class BinanceCandlestickFetcherApplication {
@@ -21,14 +23,23 @@ public class BinanceCandlestickFetcherApplication {
         ApplicationContext applicationContext = SpringApplication.run(BinanceCandlestickFetcherApplication.class, args);
         ServiceLayer service = applicationContext.getBean(ServiceLayer.class);
         //ApiController apiController = applicationContext.getBean(ApiController.class);
+        /*
         String symbol = "EOSUSDT";
         String start = "2018-05-28T03:00:00";
         String interval = "1d";
         int limit = 10;
         //startTime==endTime of start
-        long startTime = service.ConvertLocalTimeToEpoch(service.CalculateEndTime(interval, start, limit));
+        long startTime = service.ConvertLocalDateTimeToEpoch(service.CalculateEndTime(interval, start, limit));
         service.GetData(symbol,startTime,interval,limit);
         //apiController.GetDataFromAPI(symbol, startTime, interval, limit);
+
+         */
+       // String path=service.createFile("deneme1","asdfasdf");
+       // System.out.println(path);
+        String begin = "2018-05-28T03:00:00";
+        LocalDateTime start = LocalDateTime.parse(begin);
+        long startTime = service.ConvertLocalDateTimeToEpoch(start);
+        service.deneme("EOSUSDT",startTime,"1d",1000);
     }
 
 

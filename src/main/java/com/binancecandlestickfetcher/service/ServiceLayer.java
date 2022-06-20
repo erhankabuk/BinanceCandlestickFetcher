@@ -26,21 +26,33 @@ public class ServiceLayer {
     @Autowired
     ApiController apiController;
 
-
+    //GetData unneccessary
     public String GetData(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
-   /*
-    String url = "https://api.binance.com/api/v3/klines?symbol=" + symbol
-            + "&interval=" + interval
-            + "&limit=" + limit
-            + "&startTime=" + startTime;
-    RestTemplate restTemplate = new RestTemplate();
-    String response = restTemplate.getForObject(url, String.class);
-    */
-     String response= apiController.GetDataFromAPI(symbol, startTime, interval, limit);
-    System.out.println(response);
-    return response;
+        String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
+        System.out.println(response);
+        return response;
     }
 
+    public void deneme(String symbol, long startTime, String interval, int limit) {
+        //String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
+        //while response!=null;
+        String basePath="C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\";
+        String fileName =basePath+ symbol + interval; // filePAth i bulmak gerek
+        if (!isFileExist(fileName)) {
+            String createdFilePath = createFile(symbol, interval);
+            String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
+            saveDataInFile(createdFilePath, response);
+        } else {
+
+            //Get file
+            //Get content
+            //convertJSONARRAY
+            //get lastindex of endTime
+            //String response = apiController.GetDataFromAPI(symbol, endTime, interval, limit);
+            //add data as interval
+        }
+
+    }
 
     //todo: Check access modifier - static
     //Gets endTime from startTime as LocalDateTime
@@ -68,7 +80,7 @@ public class ServiceLayer {
 
     //todo: Check access modifier - static
     //Converts any LocalDateTime to Epoch
-    public static long ConvertLocalTimeToEpoch(LocalDateTime time) {
+    public static long ConvertLocalDateTimeToEpoch(LocalDateTime time) {
         try {
             System.out.println("End : " + time);
             Instant instant = time.atZone(ZoneId.systemDefault()).toInstant();
@@ -140,9 +152,10 @@ public class ServiceLayer {
 
         try {
             // todo: Needs a base folder path
-// slug gibi - koy aralarına
+            // slug gibi - koy aralarına
             //eosusdt
-            String fileName = LocalDateTime.now() + symbol + interval;
+            //String fileName = LocalDateTime.now() + symbol + interval;
+            String fileName = symbol + interval;
             File file = new File(fileName);
 
             file.createNewFile();
