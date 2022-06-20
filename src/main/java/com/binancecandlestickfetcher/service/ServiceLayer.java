@@ -1,10 +1,18 @@
 package com.binancecandlestickfetcher.service;
 
+import com.binancecandlestickfetcher.controller.ApiController;
+import com.binancecandlestickfetcher.utility.BusinessIntegrityException;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,6 +23,18 @@ import java.time.ZoneId;
 @Service
 public class ServiceLayer {
 
+    public String GetDataFromAPI(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
+    String url = "https://api.binance.com/api/v3/klines?symbol=" + symbol
+            + "&interval=" + interval
+            + "&limit=" + limit
+            + "&startTime=" + startTime;
+    RestTemplate restTemplate = new RestTemplate();
+    String response = restTemplate.getForObject(url, String.class);
+    System.out.println(response);
+    return response;
+    }
+
+    //todo: Check access modifier - static
     //Gets endTime from startTime as LocalDateTime
     public static LocalDateTime CalculateEndTime(String interval, String startTime, int limit) {
         LocalDateTime endTime = LocalDateTime.parse(startTime);
@@ -38,14 +58,22 @@ public class ServiceLayer {
         }
     }
 
+    //todo: Check access modifier - static
     //Converts any LocalDateTime to Epoch
     public static long ConvertLocalTimeToEpoch(LocalDateTime time) {
-        System.out.println("End : " + time);
-        Instant instant = time.atZone(ZoneId.systemDefault()).toInstant();
-        long convertedTime = instant.toEpochMilli();
-        System.out.println("ConvertedTime : " + convertedTime);
-        return convertedTime;
+        try {
+            System.out.println("End : " + time);
+            Instant instant = time.atZone(ZoneId.systemDefault()).toInstant();
+            long convertedTime = instant.toEpochMilli();
+            System.out.println("ConvertedTime : " + convertedTime);
+            return convertedTime;
+        } catch (Exception e) {
+            //todo: return BusinessIntegrityException
+            throw new RuntimeException(e);
+        }
+
     }
+
 
     //Check files for lastCloseTime
     public void checkLastCloseTime(String filePath) {

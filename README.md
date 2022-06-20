@@ -56,7 +56,7 @@ m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
   ]
 ]
 ```
-* https://api.binance.com/api/v3/klines?symbol=EOSUSDT&interval=1d
+* https://api.binance.com/api/v3/klines?symbol=EOSUSDT&interval=1d&limit=1000&startTime=1527465600000
   https://api.binance.com/sapi/v1/lending/project/position/list
 ---
 
