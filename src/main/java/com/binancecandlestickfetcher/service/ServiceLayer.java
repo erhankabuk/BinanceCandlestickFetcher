@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.Map;
 
 @Service
 public class ServiceLayer {
@@ -52,40 +51,26 @@ public class ServiceLayer {
     //Convert interval int to String
     public String convertIntervalFromIntToString(int interval) throws BusinessIntegrityException {
         try {
-            if (interval == 1) {
-                return "1m";
-            } else if (interval == 3) {
-                return "3m";
-            } else if (interval == 5) {
-                return "5m";
-            } else if (interval == 15) {
-                return "15m";
-            } else if (interval == 30) {
-                return "30m";
-            } else if (interval == 60) {
-                return "1h";
-            } else if (interval == 120) {
-                return "2h";
-            } else if (interval == 240) {
-                return "4h";
-            } else if (interval == 360) {
-                return "6h";
-            } else if (interval == 480) {
-                return "8h";
-            } else if (interval == 720) {
-                return "12h";
-            } else if (interval == 1440) {
-                return "1d";
-            } else if (interval == 4320) {
-                return "3d";
-            } else if (interval == 10080) {
-                return "1w";
-            } else if (interval == 40320) {
-                return "1M";
-            } else {
-                return "Invalid interval";
-            }
-
+            HashMap<Integer,String> intervalList = new HashMap<Integer,String>(){
+                {
+                    put(1,"1m");
+                    put(3,"3m");
+                    put(5,"5m");
+                    put(15,"15m");
+                    put(30,"30m");
+                    put(60,"1h");
+                    put(120,"2h");
+                    put(240,"4h");
+                    put(360,"6h");
+                    put(480,"8h");
+                    put(720,"12h");
+                    put(1440,"1d");
+                    put(4320,"3d");
+                    put(10080,"1w");
+                    put(40320,"1M");
+                }
+            };
+            return intervalList.get(interval);
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
@@ -105,8 +90,7 @@ public class ServiceLayer {
     //Check Folder is existed.
     public String checkFolder(String symbol, int interval) throws BusinessIntegrityException {
         try {
-            String fileName = symbol;
-            File file = new File(fileName);
+            File file = new File(symbol);
             if (file.exists()) {
                 String fileNameHourly = symbol + "-" + interval;
                 File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
@@ -129,30 +113,28 @@ public class ServiceLayer {
         }
     }
 
-    //todo: Check access modifier - static
+    //todo: Add All Intervals
     //Gets endTime from startTime as LocalDateTime
-    public static LocalDateTime calculateEndTime(String interval, String startTime, int limit) throws BusinessIntegrityException {
+    public  LocalDateTime calculateEndTime(int interval, String startTime, int limit) throws BusinessIntegrityException {
         try {
             LocalDateTime endTime = LocalDateTime.parse(startTime);
             System.out.println("Start : " + endTime);
-            if (interval == "1m") {
+            if (interval == 1) {
                 return endTime = endTime.plusMinutes(limit);
-            } else if (interval == "5m") {
+            } else if (interval == 5) {
                 return endTime = endTime.plusMinutes(limit * 5);
-            } else if (interval == "30m") {
+            } else if (interval == 30) {
                 return endTime = endTime.plusMinutes(limit * 30);
-            } else if (interval == "1h") {
+            } else if (interval == 60) {
                 return endTime = endTime.plusHours(limit);
-            } else if (interval == "4h") {
+            } else if (interval == 240) {
                 return endTime = endTime.plusHours(limit * 4);
-            } else if (interval == "1d") {
+            } else if (interval == 1440) {
                 return endTime = endTime.plusDays(limit);
             } else {
                 System.out.println("End : Invalid internal...");
-                //todo: return BusinessIntegrityException
                 return null;
             }
-
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }

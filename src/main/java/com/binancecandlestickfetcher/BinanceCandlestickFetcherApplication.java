@@ -23,7 +23,8 @@ public class BinanceCandlestickFetcherApplication {
            String begin = "2018-05-28T03:00:00";
            LocalDateTime start = LocalDateTime.parse(begin);
            long startTime = service.convertLocalDateTimeToEpoch(start);
-           service.updateData("EOSUSDT", startTime, 240, 10);
+           //System.out.println(service.convertIntervalFromIntToString(31));
+           service.updateData("EOSUSDT", startTime, 720, 10);
            //service.updateData("EOSUSDT",startTime,5,10);
            //service.updateData("EOSUSDT",startTime,30,10);
            //service.updateData("EOSUSDT",startTime,60,10);
