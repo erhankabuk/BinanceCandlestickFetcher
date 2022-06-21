@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class ServiceLayer {
@@ -26,29 +27,19 @@ public class ServiceLayer {
     @Autowired
     ApiController apiController;
 
-    /*
-        //GetData unneccessary
-        public String GetData(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
-            String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
-            System.out.println(response);
-            return response;
-        }
-    */
     public void deneme(String symbol, long startTime, String interval, int limit) {
-        //String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
         //while response!=null;
-        String basePath = "C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\";
-        String fileName = basePath + symbol + interval; // filePAth i bulmak gerek
+        String basePath = checkFolder(symbol, interval);
+        String fileName = createFileNameByTimeAndInterval(basePath, symbol, interval);
 
         if (!isFileExist(fileName)) {
-            String createdFilePath = createFile(symbol, interval);
             String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
             if (response != null) {
-                checkFolder(symbol, interval);
-                saveDataInFile(createdFilePath, response);
+                String createdFile = createFile(fileName);
+                saveDataInFile(createdFile, response);
             }
         } else {
-
+            System.out.println("File existed");
             //Get file
             //Get content
             //convertJSONARRAY
@@ -59,11 +50,17 @@ public class ServiceLayer {
 
     }
 
-    public String checkFolder(String symbol, String interval) {
+    //Create FileName
+    public String createFileNameByTimeAndInterval(String basePath, String symbol, String interval) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String createdTime = LocalDateTime.now().format(formatter);
+        return basePath + "\\" + symbol + "-" + interval + " " + createdTime;
+    }
 
+    //Check Folder is existed.
+    public String checkFolder(String symbol, String interval) {
         String fileName = symbol;
         File file = new File(fileName);
-
         if (file.exists()) {
             if (interval == "1d" || interval == "4h") {
                 return file.getAbsolutePath();
@@ -76,14 +73,12 @@ public class ServiceLayer {
             return fileHourly.getAbsolutePath();
         } else {
             file.mkdirs();
-
             if (interval == "1m" || interval == "5m" || interval == "30m" || interval == "1h") {
                 String fileNameHourly = symbol + "-" + interval;
                 File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
                 fileHourly.mkdirs();
                 return fileHourly.getAbsolutePath();
             }
-
             return file.getAbsolutePath();
         }
     }
@@ -131,10 +126,8 @@ public class ServiceLayer {
 
     //Check files for lastCloseTime
     public void checkLastCloseTime(String filePath) {
-
         try {
             String content = Files.readString(Paths.get(filePath));
-
             //convert string to Json with gson
             Gson gson = new Gson();
             gson.toJson(content);
@@ -142,9 +135,7 @@ public class ServiceLayer {
             // get closetime from last item
             //todo: model kısmından dolayı nasıl yapacağımı kestiremiyorum
             //todo: jsonArray olarak çevirmem gerekebilir.
-
             //return closetime as startDate;
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -152,16 +143,14 @@ public class ServiceLayer {
 
     //Check database for any file existed before
     public boolean isFileExist(String filePath) {
-
         try {
             Path path = Paths.get(filePath);
-            // file exists and it is not a directory
+            // file exists and it is not a directory &&!Files.isDirectory(path)
             if (Files.exists(path)) {
                 //todo: check flowchart
                 return true;
             } else {
                 //todo: check flowchart
-
                 return false;
             }
         } catch (Exception e) {
@@ -175,37 +164,20 @@ public class ServiceLayer {
             Path path = Paths.get(filePath);
             String editedContent = content.replaceAll("\\s+", "");
             Files.writeString(path, editedContent);
-
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
-
     }
 
     //Create File
-    public String createFile(String symbol, String interval) {
-
+    public String createFile(String fileName) {
         try {
-            // todo: Needs a base folder path
-            // slug gibi - koy aralarına
-            //eosusdt
-            //String fileName = LocalDateTime.now() + symbol + interval;
-//check folderIsExisted
-
-
-            String fileName = symbol + "-" + interval;
             File file = new File(fileName);
-
             file.createNewFile();
-
-            //return file.getName();
             return file.getAbsolutePath();
-
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
-
     }
-
 
 }
