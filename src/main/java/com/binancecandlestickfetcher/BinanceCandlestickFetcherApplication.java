@@ -1,18 +1,11 @@
 package com.binancecandlestickfetcher;
 
-import com.binancecandlestickfetcher.controller.ApiController;
 import com.binancecandlestickfetcher.service.ServiceLayer;
 import com.binancecandlestickfetcher.utility.BusinessIntegrityException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.web.client.RestTemplate;
-
 import java.time.LocalDateTime;
-
 
 @SpringBootApplication
 public class BinanceCandlestickFetcherApplication {
@@ -41,17 +34,12 @@ public class BinanceCandlestickFetcherApplication {
         String begin = "2018-05-28T03:00:00";
         LocalDateTime start = LocalDateTime.parse(begin);
         long startTime = service.convertLocalDateTimeToEpoch(start);
-        service.deneme("EOSUSDT",startTime,"1m",10);
-        //service.deneme("EOSUSDT",startTime,"5m",10);
-        //service.deneme("EOSUSDT",startTime,"30m",10);
-        //service.deneme("EOSUSDT",startTime,"1h",10);
-        //service.deneme("EOSUSDT",startTime,"4h",10);
-        //service.deneme("EOSUSDT",startTime,"1d",10);
-
-       // String s= service.checkFolder("EOSUSDT","1m");
-       // System.out.println(s);
-
-
+        service.deneme("EOSUSDT",startTime,1,10);
+        //service.deneme("EOSUSDT",startTime,5,10);
+        //service.deneme("EOSUSDT",startTime,30,10);
+        //service.deneme("EOSUSDT",startTime,60,10);
+        //service.deneme("EOSUSDT",startTime,240,10);
+        //service.deneme("EOSUSDT",startTime,1440,10);
 
         System.exit(0);
     }

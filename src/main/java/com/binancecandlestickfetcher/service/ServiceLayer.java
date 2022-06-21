@@ -1,18 +1,12 @@
 package com.binancecandlestickfetcher.service;
 
 import com.binancecandlestickfetcher.controller.ApiController;
-import com.binancecandlestickfetcher.utility.BusinessIntegrityException;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +14,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class ServiceLayer {
@@ -27,19 +23,21 @@ public class ServiceLayer {
     @Autowired
     ApiController apiController;
 
-    public void deneme(String symbol, long startTime, String interval, int limit) {
+    public void deneme(String symbol, long startTime, int interval, int limit) {
+
         //while response!=null;
+        String convertedInterval = convertIntervalFromIntToString(interval);
+        String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
+
         String basePath = checkFolder(symbol, interval);
         String fileName = createFileNameByTimeAndInterval(basePath, symbol, interval);
 
-        if (!isFileExist(fileName)) {
-            String response = apiController.GetDataFromAPI(symbol, startTime, interval, limit);
-            if (response != null) {
-                String createdFile = createFile(fileName);
-                saveDataInFile(createdFile, response);
-            }
+        if (!isFileExist(fileName)&&response != null) {
+              String createdFile = createFile(fileName);
+             saveDataInFile(createdFile, response);
+
         } else {
-            System.out.println("File existed");
+            System.out.println(fileName + " existed");
             //Get file
             //Get content
             //convertJSONARRAY
@@ -50,19 +48,43 @@ public class ServiceLayer {
 
     }
 
+    //Convert interval int to String
+    public String convertIntervalFromIntToString(int interval) {
+        try {
+            if (interval == 1) {
+                return "1m";
+            } else if (interval == 5) {
+                return "5m";
+            } else if (interval == 30) {
+                return "30m";
+            } else if (interval == 60) {
+                return "1h";
+            } else if (interval == 240) {
+                return "4h";
+            } else if (interval == 1440) {
+                return "1d";
+            } else {
+                return "Invalid interval";
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     //Create FileName
-    public String createFileNameByTimeAndInterval(String basePath, String symbol, String interval) {
+    public String createFileNameByTimeAndInterval(String basePath, String symbol, int interval) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String createdTime = LocalDateTime.now().format(formatter);
         return basePath + "\\" + symbol + "-" + interval + " " + createdTime;
     }
 
     //Check Folder is existed.
-    public String checkFolder(String symbol, String interval) {
+    public String checkFolder(String symbol, int interval) {
         String fileName = symbol;
         File file = new File(fileName);
         if (file.exists()) {
-            if (interval == "1d" || interval == "4h") {
+            if (interval == 1440 || interval == 240) {
                 return file.getAbsolutePath();
             }
             String fileNameHourly = symbol + "-" + interval;
@@ -73,7 +95,7 @@ public class ServiceLayer {
             return fileHourly.getAbsolutePath();
         } else {
             file.mkdirs();
-            if (interval == "1m" || interval == "5m" || interval == "30m" || interval == "1h") {
+            if (interval == 1 || interval == 5 || interval == 30 || interval == 60) {
                 String fileNameHourly = symbol + "-" + interval;
                 File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
                 fileHourly.mkdirs();
