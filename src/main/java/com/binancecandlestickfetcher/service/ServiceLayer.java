@@ -2,15 +2,15 @@ package com.binancecandlestickfetcher.service;
 
 import com.binancecandlestickfetcher.controller.ApiController;
 import com.binancecandlestickfetcher.utility.BusinessIntegrityException;
-import com.google.gson.Gson;
+import com.google.gson.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -26,48 +26,78 @@ public class ServiceLayer {
     public void updateData(String symbol, long startTime, int interval, int limit) throws BusinessIntegrityException {
 
         //while response!=null;
-        String convertedInterval = convertIntervalFromIntToString(interval);
-        String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
+        // String convertedInterval = convertIntervalFromIntToString(interval);
+        // String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
 
         String basePath = checkFolder(symbol, interval);
         String fileName = createFileNameByTimeAndInterval(basePath, symbol, interval);
 
-        if (!isFileExist(fileName) && response != null) {
-            String createdFile = createFile(fileName);
-            saveDataInFile(createdFile, response);
+        if (!isFileExist(fileName)) {
+
+            String convertedInterval = convertIntervalFromIntToString(interval);
+            String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
+            if (response != "[]") {
+                String createdFile = createFile(fileName);
+                saveDataInFile(createdFile, response);
+            }
+            //How loop wil be stoped?
+
 
         } else {
             System.out.println(fileName + " existed");
-            //Get file
-            //Get content
-            //convertJSONARRAY
-            //get lastindex of endTime
-            //String response = apiController.GetDataFromAPI(symbol, endTime, interval, limit);
-            //add data as interval
+            String convertedInterval = convertIntervalFromIntToString(interval);
+            String response = apiController.GetDataFromAPI(symbol, getLastEndTimeAsNewStartTime(fileName), convertedInterval, limit);
+            if (response != "[]") {
+                //override on file!! append data
+                saveDataInFile(fileName, response);
+            }
+
+            //add data as interval 1d 4h first
         }
 
+    }
+
+    //Check files for lastEndTime
+    //C:\Users\erhan\IdeaProjects\BinanceCandlestickFetcher\EOSUSDT\EOSUSDT-240\EOSUSDT-240 2022-06-22
+    public long getLastEndTimeAsNewStartTime(String filePath) throws BusinessIntegrityException {
+        try {
+            //Get file content
+            String content = Files.readString(Paths.get(filePath));
+            //Convert string to JsonArray
+            JsonArray jsonArray = new Gson().fromJson(content, JsonArray.class);
+            //Get last index of JsonArray
+            int lastIndexOfJsonArray = jsonArray.size() - 1;
+            //Get endTime of last index of JsonArray
+            JsonElement jsonElement = jsonArray.get(lastIndexOfJsonArray).getAsJsonArray().get(6);
+            //Convert jsonelement to long
+            long startTime= jsonElement.getAsLong();
+            System.out.println("Last: "+startTime);
+            return startTime;
+        } catch (IOException e) {
+            throw new BusinessIntegrityException(e.getMessage());
+        }
     }
 
     //Convert interval int to String
     public String convertIntervalFromIntToString(int interval) throws BusinessIntegrityException {
         try {
-            HashMap<Integer,String> intervalList = new HashMap<Integer,String>(){
+            HashMap<Integer, String> intervalList = new HashMap<Integer, String>() {
                 {
-                    put(1,"1m");
-                    put(3,"3m");
-                    put(5,"5m");
-                    put(15,"15m");
-                    put(30,"30m");
-                    put(60,"1h");
-                    put(120,"2h");
-                    put(240,"4h");
-                    put(360,"6h");
-                    put(480,"8h");
-                    put(720,"12h");
-                    put(1440,"1d");
-                    put(4320,"3d");
-                    put(10080,"1w");
-                    put(40320,"1M");
+                    put(1, "1m");
+                    put(3, "3m");
+                    put(5, "5m");
+                    put(15, "15m");
+                    put(30, "30m");
+                    put(60, "1h");
+                    put(120, "2h");
+                    put(240, "4h");
+                    put(360, "6h");
+                    put(480, "8h");
+                    put(720, "12h");
+                    put(1440, "1d");
+                    put(4320, "3d");
+                    put(10080, "1w");
+                    put(40320, "1M");
                 }
             };
             return intervalList.get(interval);
@@ -113,9 +143,8 @@ public class ServiceLayer {
         }
     }
 
-    //todo: Add All Intervals
     //Gets endTime from startTime as LocalDateTime
-    public  LocalDateTime calculateEndTime(int interval, String startTime, int limit) throws BusinessIntegrityException {
+    public LocalDateTime calculateEndTime(int interval, String startTime, int limit) throws BusinessIntegrityException {
         try {
             LocalDateTime endTime = LocalDateTime.parse(startTime);
             System.out.println("Start : " + endTime);
@@ -153,22 +182,6 @@ public class ServiceLayer {
         }
     }
 
-    //Check files for lastCloseTime
-    public void checkLastCloseTime(String filePath) throws BusinessIntegrityException {
-        try {
-            String content = Files.readString(Paths.get(filePath));
-            //convert string to Json with gson
-            Gson gson = new Gson();
-            gson.toJson(content);
-
-            // get closetime from last item
-            //todo: model kısmından dolayı nasıl yapacağımı kestiremiyorum
-            //todo: jsonArray olarak çevirmem gerekebilir.
-            //return closetime as startDate;
-        } catch (IOException e) {
-            throw new BusinessIntegrityException(e.getMessage());
-        }
-    }
 
     //Check database for any file existed before
     public boolean isFileExist(String filePath) throws BusinessIntegrityException {
@@ -192,7 +205,13 @@ public class ServiceLayer {
         try {
             Path path = Paths.get(filePath);
             String editedContent = content.replaceAll("\\s+", "");
-            Files.writeString(path, editedContent);
+            //FileWriter fi = new FileWriter(filePath);
+            //fi.append(editedContent);
+            Files.writeString(path, editedContent, StandardOpenOption.APPEND);
+            //Files.writeString(path, editedContent);
+
+
+
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
