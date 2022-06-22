@@ -49,6 +49,7 @@ public class ServiceLayer {
             String response = apiController.GetDataFromAPI(symbol, getLastEndTimeAsNewStartTime(fileName), convertedInterval, limit);
             if (response != "[]") {
                 //override on file!! append data
+
                 saveDataInFile(fileName, response);
             }
 
@@ -204,9 +205,13 @@ public class ServiceLayer {
     public void saveDataInFile(String filePath, String content) throws BusinessIntegrityException {
         try {
             Path path = Paths.get(filePath);
-            String editedContent = content.replaceAll("\\s+", "");
-            //FileWriter fi = new FileWriter(filePath);
-            //fi.append(editedContent);
+            //Added ","
+            String editedContent = content.replaceAll("\\s+", "")+",";
+           //Convert string to json Array
+            //get content in file and append with new content
+            //Convert jsonarray to string
+            //write string
+
             Files.writeString(path, editedContent, StandardOpenOption.APPEND);
             //Files.writeString(path, editedContent);
 
