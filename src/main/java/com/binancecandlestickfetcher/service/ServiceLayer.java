@@ -30,7 +30,7 @@ public class ServiceLayer {
         // String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
 
         String basePath = checkFolder(symbol, interval);
-        String fileName = createFileNameByTimeAndInterval(basePath, symbol, interval);
+        String fileName = getFileNameByTimeAndInterval(basePath, symbol, interval);
 
         if (!isFileExist(fileName)) {
 
@@ -44,12 +44,22 @@ public class ServiceLayer {
 
 
         } else {
+            // Data Integrity
+            // Önce veriyi çek
+            // Verinin son indexinin endTimeına bak.
+            // ilk verinin startTimeını al calculateendtime ını al
+            //eğer calculatedEndTime-1 ==endtime ise yeni dosyada endTime ile veriyi çeksin
+            // değilse endtimedan calculatedtime-1 e kadarki veriyi o günkü dosyaya kaydet
+            //1m de 1440 veri var 4h ye kadar günlük tek sorgu dosyaya kaydediyor.4h sonrası tek dosyada
+
+            //4h sonrası için
+
             System.out.println(fileName + " existed");
             String convertedInterval = convertIntervalFromIntToString(interval);
             String response = apiController.GetDataFromAPI(symbol, getLastEndTimeAsNewStartTime(fileName), convertedInterval, limit);
             if (response != "[]") {
                 //override on file!! append data
-
+                //Dosya adını getir.
                 saveDataInFile(fileName, response);
             }
 
@@ -58,12 +68,43 @@ public class ServiceLayer {
 
     }
 
+    //Save HttpResponse Data in File
+    public void saveDataInFile(String filePath, String content) throws BusinessIntegrityException {
+        try {
+
+            Path path = Paths.get(filePath);
+/*
+            //Get file content
+            String content2 = Files.readString(path);
+            //Convert string to JsonArray
+            JsonArray jsonArray = new Gson().fromJson(content2, JsonArray.class);
+
+            System.out.println("Dosyadaki jsonArray" + jsonArray);
+*/
+            //Added ","
+            // String editedContent = content.replaceAll("\\s+", "")+",";
+            String editedContent = content.replaceAll("\\s+", "");
+            //Convert string to json Array
+            //get content in file and append with new content
+            //Convert jsonarray to string
+            //write string
+
+            Files.writeString(path, editedContent, StandardOpenOption.APPEND);
+            //Files.writeString(path, editedContent);
+
+
+        } catch (Exception e) {
+            throw new BusinessIntegrityException(e.getMessage());
+        }
+    }
+
     //Check files for lastEndTime
     //C:\Users\erhan\IdeaProjects\BinanceCandlestickFetcher\EOSUSDT\EOSUSDT-240\EOSUSDT-240 2022-06-22
     public long getLastEndTimeAsNewStartTime(String filePath) throws BusinessIntegrityException {
         try {
             //Get file content
             String content = Files.readString(Paths.get(filePath));
+            System.out.println("hatalı" + content);
             //Convert string to JsonArray
             JsonArray jsonArray = new Gson().fromJson(content, JsonArray.class);
             //Get last index of JsonArray
@@ -71,8 +112,8 @@ public class ServiceLayer {
             //Get endTime of last index of JsonArray
             JsonElement jsonElement = jsonArray.get(lastIndexOfJsonArray).getAsJsonArray().get(6);
             //Convert jsonelement to long
-            long startTime= jsonElement.getAsLong();
-            System.out.println("Last: "+startTime);
+            long startTime = jsonElement.getAsLong();
+            System.out.println("Last: " + startTime);
             return startTime;
         } catch (IOException e) {
             throw new BusinessIntegrityException(e.getMessage());
@@ -108,7 +149,7 @@ public class ServiceLayer {
     }
 
     //Create FileName
-    public String createFileNameByTimeAndInterval(String basePath, String symbol, int interval) throws BusinessIntegrityException {
+    public String getFileNameByTimeAndInterval(String basePath, String symbol, int interval) throws BusinessIntegrityException {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String createdTime = LocalDateTime.now().atZone(ZoneId.systemDefault()).format(formatter);
@@ -121,24 +162,24 @@ public class ServiceLayer {
     //Check Folder is existed.
     public String checkFolder(String symbol, int interval) throws BusinessIntegrityException {
         try {
-            File file = new File(symbol);
-            if (file.exists()) {
+            String databaseFolderPath = "database//" + symbol;
+            File file = new File(databaseFolderPath);
+            if (!file.exists()) {
+                file.mkdirs();
                 String fileNameHourly = symbol + "-" + interval;
                 File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
-                if (!fileHourly.exists()) {
-                    fileHourly.mkdirs();
-                }
+                fileHourly.mkdirs();
                 return fileHourly.getAbsolutePath();
-            } else {
-                file.mkdirs();
-                if (interval == 1 || interval == 5 || interval == 30 || interval == 60) {
-                    String fileNameHourly = symbol + "-" + interval;
-                    File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
-                    fileHourly.mkdirs();
-                    return fileHourly.getAbsolutePath();
-                }
-                return file.getAbsolutePath();
+
             }
+
+            String fileNameHourly = symbol + "-" + interval;
+            File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
+            if (!fileHourly.exists()) {
+                fileHourly.mkdirs();
+            }
+            return fileHourly.getAbsolutePath();
+
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
@@ -183,7 +224,6 @@ public class ServiceLayer {
         }
     }
 
-
     //Check database for any file existed before
     public boolean isFileExist(String filePath) throws BusinessIntegrityException {
         try {
@@ -196,27 +236,6 @@ public class ServiceLayer {
                 //todo: check flowchart
                 return false;
             }
-        } catch (Exception e) {
-            throw new BusinessIntegrityException(e.getMessage());
-        }
-    }
-
-    //Save HttpResponse Data in File
-    public void saveDataInFile(String filePath, String content) throws BusinessIntegrityException {
-        try {
-            Path path = Paths.get(filePath);
-            //Added ","
-            String editedContent = content.replaceAll("\\s+", "")+",";
-           //Convert string to json Array
-            //get content in file and append with new content
-            //Convert jsonarray to string
-            //write string
-
-            Files.writeString(path, editedContent, StandardOpenOption.APPEND);
-            //Files.writeString(path, editedContent);
-
-
-
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
