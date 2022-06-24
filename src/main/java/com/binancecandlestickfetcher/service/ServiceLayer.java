@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -30,10 +31,9 @@ public class ServiceLayer {
         // String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
 
         String basePath = checkFolder(symbol, interval);
-        String fileName = getFileNameByTimeAndInterval(basePath, symbol, interval);
+        String fileName = getFileNameByTimeAndInterval(basePath, symbol, interval, startTime);
 
         if (!isFileExist(fileName)) {
-
             String convertedInterval = convertIntervalFromIntToString(interval);
             String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
             if (response != "[]") {
@@ -41,8 +41,6 @@ public class ServiceLayer {
                 saveDataInFile(createdFile, response);
             }
             //How loop wil be stoped?
-
-
         } else {
             // Data Integrity
             // Önce veriyi çek
@@ -58,20 +56,15 @@ public class ServiceLayer {
             String convertedInterval = convertIntervalFromIntToString(interval);
             String response = apiController.GetDataFromAPI(symbol, getLastEndTimeAsNewStartTime(fileName), convertedInterval, limit);
             if (response != "[]") {
-                //override on file!! append data
-                //Dosya adını getir.
                 saveDataInFile(fileName, response);
             }
-
-            //add data as interval 1d 4h first
         }
-
     }
 
     //Save HttpResponse Data in File
     public void saveDataInFile(String filePath, String response) throws BusinessIntegrityException {
         try {
-
+            //Get path
             Path path = Paths.get(filePath);
             //Get file content
             String contentInFiles = Files.readString(path);
@@ -80,24 +73,27 @@ public class ServiceLayer {
             JsonArray jsonArrayOfResponse = new Gson().fromJson(response, JsonArray.class);
             System.out.println("Data in file: " + jsonArrayFromContentInFiles);
             System.out.println("Response: " + jsonArrayOfResponse);
-            if (jsonArrayFromContentInFiles==null) {
-                String updatedContent = String.valueOf(jsonArrayOfResponse);
-                //Files.writeString(path, updatedContent, StandardOpenOption.APPEND);
-                Files.writeString(path, updatedContent);
-            } else {
+            //Write data to file
+            if (jsonArrayFromContentInFiles != null) {
                 for (JsonElement data : jsonArrayOfResponse) {
                     jsonArrayFromContentInFiles.add(data);
                 }
-                //write string
-                String updatedContent = String.valueOf(jsonArrayFromContentInFiles);
-                //Files.writeString(path, updatedContent, StandardOpenOption.APPEND);
-                Files.writeString(path, updatedContent);
-                //Files.writeString(path, editedContent);
-
+                writeDataToFile(path, jsonArrayFromContentInFiles);
+            } else {
+                writeDataToFile(path, jsonArrayOfResponse);
             }
             System.out.println("Updated data in file: " + jsonArrayFromContentInFiles);
-
         } catch (Exception e) {
+            throw new BusinessIntegrityException(e.getMessage());
+        }
+    }
+
+    //Write data to file
+    public void writeDataToFile(Path path, JsonArray jsonArray) throws BusinessIntegrityException {
+        try {
+            String content = String.valueOf(jsonArray);
+            Files.writeString(path, content);
+        } catch (IOException e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
     }
@@ -151,11 +147,23 @@ public class ServiceLayer {
         }
     }
 
+    //Converts Epoch to DateTime
+    public LocalDateTime convertEpochToLocalDateTime(long epochTime){
+        LocalDateTime ldt = Instant.ofEpochMilli(epochTime)
+                .atZone(ZoneId.systemDefault()).toLocalDateTime();
+        System.out.println(ldt);
+        return ldt;
+    }
     //Create FileName
-    public String getFileNameByTimeAndInterval(String basePath, String symbol, int interval) throws BusinessIntegrityException {
+    public String getFileNameByTimeAndInterval(String basePath, String symbol, int interval,long startTime) throws BusinessIntegrityException {
         try {
+            //Buraya starttimea göre zaman vermem lazım
+            //convertEpochToLocalDateTime
+            //todo : burada dosya adının içindeki verinin ilk günkü adı olması gerekiyor.
+
+            LocalDateTime start= convertEpochToLocalDateTime(startTime);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            String createdTime = LocalDateTime.now().atZone(ZoneId.systemDefault()).format(formatter);
+            String createdTime = start.atZone(ZoneId.systemDefault()).format(formatter);
             return basePath + "\\" + symbol + "-" + interval + " " + createdTime;
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
@@ -191,28 +199,24 @@ public class ServiceLayer {
     //Gets endTime from startTime as LocalDateTime
     public LocalDateTime calculateEndTime(int interval, String startTime, int limit) throws BusinessIntegrityException {
         try {
-            LocalDateTime endTime = LocalDateTime.parse(startTime);
-            System.out.println("Start : " + endTime);
+
+            LocalDateTime base = LocalDateTime.parse(startTime);
+            LocalDateTime start = base.with(LocalDateTime.MIN);
+            LocalDateTime end = base.with(LocalDateTime.MAX);
+            System.out.println("Start : " + start);
+            System.out.println("End : " + end);
+
             if (interval == 1) {
-                return endTime = endTime.plusMinutes(limit);
-            } else if (interval == 5) {
-                return endTime = endTime.plusMinutes(limit * 5);
-            } else if (interval == 30) {
-                return endTime = endTime.plusMinutes(limit * 30);
-            } else if (interval == 60) {
-                return endTime = endTime.plusHours(limit);
-            } else if (interval == 240) {
-                return endTime = endTime.plusHours(limit * 4);
-            } else if (interval == 1440) {
-                return endTime = endTime.plusDays(limit);
-            } else {
-                System.out.println("End : Invalid internal...");
-                return null;
+                //Add 1.44
+                return  start.plusMinutes(limit);
             }
+
+            return base.with(LocalDateTime.MAX);
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
     }
+
 
     //Converts any LocalDateTime to Epoch
     public long convertLocalDateTimeToEpoch(LocalDateTime time) throws BusinessIntegrityException {

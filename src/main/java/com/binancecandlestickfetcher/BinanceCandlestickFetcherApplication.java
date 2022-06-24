@@ -25,7 +25,7 @@ public class BinanceCandlestickFetcherApplication {
             LocalDateTime start = LocalDateTime.parse(begin);
             long startTime = service.convertLocalDateTimeToEpoch(start);
             //System.out.println(service.convertIntervalFromIntToString(31));
-           // service.updateData("EOSUSDT", startTime,240 , 10);
+            // service.updateData("EOSUSDT", startTime,240 , 10);
             //service.updateData("EOSUSDT",startTime,5,10);
             //service.updateData("EOSUSDT",startTime,30,10);
             //service.updateData("EOSUSDT",startTime,60,10);
@@ -34,11 +34,12 @@ public class BinanceCandlestickFetcherApplication {
 
             //  String lastEndTime = "C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\SHIBUSDT\\SHIBUSDT-240\\SHIBUSDT-240 2022-06-23";
             // long newStartTime = service.getLastEndTimeAsNewStartTime(lastEndTime);
-             String lastEndTime = "database\\XRPUSDT\\XRPUSDT-1440\\XRPUSDT-1440 2022-06-24";
-             long newStartTime = service.getLastEndTimeAsNewStartTime(lastEndTime);
+            String lastEndTime = "database\\XRPUSDT\\XRPUSDT-1440\\XRPUSDT-1440 2022-06-24";
+            long newStartTime = service.getLastEndTimeAsNewStartTime(lastEndTime);
 
-            service.updateData("XRPUSDT", newStartTime, 1440, 10);
-
+            // service.updateData("XRPUSDT", newStartTime, 1440, 10);
+            //service.calculateEndTime(240, start.toString(), 1000);
+            service.convertEpochToLocalDateTime(1527465600);
             System.exit(0);
         } catch (BeansException e) {
             throw new BusinessIntegrityException(e.getMessage());
