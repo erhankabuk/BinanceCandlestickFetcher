@@ -69,29 +69,33 @@ public class ServiceLayer {
     }
 
     //Save HttpResponse Data in File
-    public void saveDataInFile(String filePath, String content) throws BusinessIntegrityException {
+    public void saveDataInFile(String filePath, String response) throws BusinessIntegrityException {
         try {
 
             Path path = Paths.get(filePath);
-/*
             //Get file content
-            String content2 = Files.readString(path);
+            String contentInFiles = Files.readString(path);
             //Convert string to JsonArray
-            JsonArray jsonArray = new Gson().fromJson(content2, JsonArray.class);
+            JsonArray jsonArrayFromContentInFiles = new Gson().fromJson(contentInFiles, JsonArray.class);
+            JsonArray jsonArrayOfResponse = new Gson().fromJson(response, JsonArray.class);
+            System.out.println("Data in file: " + jsonArrayFromContentInFiles);
+            System.out.println("Response: " + jsonArrayOfResponse);
+            if (jsonArrayFromContentInFiles==null) {
+                String updatedContent = String.valueOf(jsonArrayOfResponse);
+                //Files.writeString(path, updatedContent, StandardOpenOption.APPEND);
+                Files.writeString(path, updatedContent);
+            } else {
+                for (JsonElement data : jsonArrayOfResponse) {
+                    jsonArrayFromContentInFiles.add(data);
+                }
+                //write string
+                String updatedContent = String.valueOf(jsonArrayFromContentInFiles);
+                //Files.writeString(path, updatedContent, StandardOpenOption.APPEND);
+                Files.writeString(path, updatedContent);
+                //Files.writeString(path, editedContent);
 
-            System.out.println("Dosyadaki jsonArray" + jsonArray);
-*/
-            //Added ","
-            // String editedContent = content.replaceAll("\\s+", "")+",";
-            String editedContent = content.replaceAll("\\s+", "");
-            //Convert string to json Array
-            //get content in file and append with new content
-            //Convert jsonarray to string
-            //write string
-
-            Files.writeString(path, editedContent, StandardOpenOption.APPEND);
-            //Files.writeString(path, editedContent);
-
+            }
+            System.out.println("Updated data in file: " + jsonArrayFromContentInFiles);
 
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
@@ -104,7 +108,6 @@ public class ServiceLayer {
         try {
             //Get file content
             String content = Files.readString(Paths.get(filePath));
-            System.out.println("hatalı" + content);
             //Convert string to JsonArray
             JsonArray jsonArray = new Gson().fromJson(content, JsonArray.class);
             //Get last index of JsonArray
@@ -228,14 +231,7 @@ public class ServiceLayer {
     public boolean isFileExist(String filePath) throws BusinessIntegrityException {
         try {
             Path path = Paths.get(filePath);
-            // file exists and it is not a directory &&!Files.isDirectory(path)
-            if (Files.exists(path)) {
-                //todo: check flowchart
-                return true;
-            } else {
-                //todo: check flowchart
-                return false;
-            }
+            return Files.exists(path) ? true : false;
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }

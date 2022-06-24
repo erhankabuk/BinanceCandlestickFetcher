@@ -32,9 +32,12 @@ public class BinanceCandlestickFetcherApplication {
             //service.updateData("EOSUSDT",startTime,240,10);
             //service.updateData("EOSUSDT",startTime,1440,10);
 
-          //  String lastEndTime = "C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\SHIBUSDT\\SHIBUSDT-240\\SHIBUSDT-240 2022-06-23";
-           // long newStartTime = service.getLastEndTimeAsNewStartTime(lastEndTime);
-            service.updateData("XRPUSDT", startTime, 240, 10);
+            //  String lastEndTime = "C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\SHIBUSDT\\SHIBUSDT-240\\SHIBUSDT-240 2022-06-23";
+            // long newStartTime = service.getLastEndTimeAsNewStartTime(lastEndTime);
+             String lastEndTime = "database\\XRPUSDT\\XRPUSDT-1440\\XRPUSDT-1440 2022-06-24";
+             long newStartTime = service.getLastEndTimeAsNewStartTime(lastEndTime);
+
+            service.updateData("XRPUSDT", newStartTime, 1440, 10);
 
             System.exit(0);
         } catch (BeansException e) {
