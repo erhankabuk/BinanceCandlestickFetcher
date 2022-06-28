@@ -11,10 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 
@@ -24,17 +21,53 @@ public class ServiceLayer {
     @Autowired
     ApiController apiController;
 
-    public void updateData(String symbol, long startTime, int interval, int limit) throws BusinessIntegrityException {
 
-        //while response!=null;
-        // String convertedInterval = convertIntervalFromIntToString(interval);
-        // String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
+    public void updateData(String symbol, long startTime, int interval, int limit) throws BusinessIntegrityException {
 
         String basePath = checkFolder(symbol, interval);
         String fileName = getFileNameByTimeAndInterval(basePath, symbol, interval, startTime);
+        String convertedInterval = convertIntervalFromIntToString(interval);
 
+
+        if (interval > 1 && interval < 240) {
+//ilk önce dosya yoksa ilk günü ekleyecek.
+            //Sorguna 1000 adet veri var bunu gün başlarına göre bölmem lazım.
+            //Eğer sonraki gün başına gelmişse yeni dosyada kaydetmeli.
+
+
+        } else if (interval >= 240) {
+
+            boolean checkLoop = true;
+            while (checkLoop) {
+                if (!isFileExist(fileName)) {
+                    String createdFile = createFile(fileName);
+                    String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
+                    if (response != "[]") {
+                        saveDataInFile(createdFile, response);
+                    } else {
+                       String responseWithoutLimit = apiController.GetDataFromAPIWithoutLimit(symbol, startTime, convertedInterval);
+                        saveDataInFile(createdFile, responseWithoutLimit);
+                    }
+                } else {
+                    long endTime = getLastEndTimeAsNewStartTime(fileName);
+                    long beginningOfToday = convertLocalDateTimeToEpoch(
+                            LocalDateTime.now().atZone(ZoneId.systemDefault()).toLocalDateTime().with(LocalTime.MIN)
+                    );
+                    while (endTime <= beginningOfToday) {
+                        String response = apiController.GetDataFromAPI(symbol, endTime, convertedInterval, limit);
+                        if (response != "[]") {
+                            saveDataInFile(fileName, response);
+                            endTime = getLastEndTimeAsNewStartTime(fileName);
+                        }
+                    }
+
+                checkLoop = false;
+                }
+
+            }
+        }
+/*
         if (!isFileExist(fileName)) {
-            String convertedInterval = convertIntervalFromIntToString(interval);
             String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
             if (response != "[]") {
                 String createdFile = createFile(fileName);
@@ -53,12 +86,14 @@ public class ServiceLayer {
             //4h sonrası için
 
             System.out.println(fileName + " existed");
-            String convertedInterval = convertIntervalFromIntToString(interval);
+            //String convertedInterval = convertIntervalFromIntToString(interval);
+
             String response = apiController.GetDataFromAPI(symbol, getLastEndTimeAsNewStartTime(fileName), convertedInterval, limit);
             if (response != "[]") {
                 saveDataInFile(fileName, response);
             }
         }
+  */
     }
 
     //Save HttpResponse Data in File
@@ -80,6 +115,7 @@ public class ServiceLayer {
                 }
                 writeDataToFile(path, jsonArrayFromContentInFiles);
             } else {
+
                 writeDataToFile(path, jsonArrayOfResponse);
             }
             System.out.println("Updated data in file: " + jsonArrayFromContentInFiles);
@@ -148,22 +184,23 @@ public class ServiceLayer {
     }
 
     //Converts Epoch to DateTime
-    public LocalDateTime convertEpochToLocalDateTime(long epochTime){
+    public LocalDateTime convertEpochToLocalDateTime(long epochTime) {
+        System.out.println("gelen long epoch" + epochTime);
+        //todo longdan locale çevirmiyor aşağısı onu çevir
+
         LocalDateTime ldt = Instant.ofEpochMilli(epochTime)
                 .atZone(ZoneId.systemDefault()).toLocalDateTime();
-        System.out.println(ldt);
+        System.out.println("converted" + ldt);
         return ldt;
     }
-    //Create FileName
-    public String getFileNameByTimeAndInterval(String basePath, String symbol, int interval,long startTime) throws BusinessIntegrityException {
-        try {
-            //Buraya starttimea göre zaman vermem lazım
-            //convertEpochToLocalDateTime
-            //todo : burada dosya adının içindeki verinin ilk günkü adı olması gerekiyor.
 
-            LocalDateTime start= convertEpochToLocalDateTime(startTime);
+    //Create FileName
+    public String getFileNameByTimeAndInterval(String basePath, String symbol, int interval, long startTime) throws BusinessIntegrityException {
+        try {
+            LocalDateTime start = convertEpochToLocalDateTime(startTime);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String createdTime = start.atZone(ZoneId.systemDefault()).format(formatter);
+            System.out.println(createdTime);
             return basePath + "\\" + symbol + "-" + interval + " " + createdTime;
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
@@ -208,7 +245,7 @@ public class ServiceLayer {
 
             if (interval == 1) {
                 //Add 1.44
-                return  start.plusMinutes(limit);
+                return start.plusMinutes(limit);
             }
 
             return base.with(LocalDateTime.MAX);
