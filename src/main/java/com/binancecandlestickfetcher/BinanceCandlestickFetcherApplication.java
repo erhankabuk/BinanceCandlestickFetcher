@@ -18,29 +18,19 @@ public class BinanceCandlestickFetcherApplication {
 
     public static void main(String[] args) throws BusinessIntegrityException {
         try {
-            //Inject ServiceLayer in main method
             ApplicationContext applicationContext = SpringApplication.run(BinanceCandlestickFetcherApplication.class, args);
             ServiceLayer service = applicationContext.getBean(ServiceLayer.class);
-            //ApiController apiController = applicationContext.getBean(ApiController.class);
 
-            //Get Request
+            //Get startTime
             String begin = "2018-05-28T03:00:00";
             LocalDateTime start = LocalDateTime.parse(begin);
             long startTime = service.convertLocalDateTimeToEpoch(start);
-            //System.out.println(service.convertIntervalFromIntToString(31));
-            // service.updateData("EOSUSDT", startTime,240 , 10);
-            //service.updateData("EOSUSDT",startTime,5,10);
-            //service.updateData("EOSUSDT",startTime,30,10);
-           // service.updateData("EOSUSDT", startTime, 60, 1000);
-
-            service.updateData("EOSUSDT",startTime,240,1000); //Done
-           // service.updateData("EOSUSDT",startTime,1440,1000);  //Done
-
-
-
-            //  String lastEndTime = "C:\\Users\\erhan\\IdeaProjects\\BinanceCandlestickFetcher\\SHIBUSDT\\SHIBUSDT-240\\SHIBUSDT-240 2022-06-23";
-            // long newStartTime = service.getLastEndTimeAsNewStartTime(lastEndTime);
-            //String lastEndTime = "database\\EOSUSDT\\EOSUSDT-1440\\EOSUSDT-1440 2018-05-28";
+            //service.updateData("EOSUSDT", startTime,1 , 1000);
+            //service.updateData("EOSUSDT",startTime,5,1000);
+            //service.updateData("EOSUSDT",startTime,30,1000);
+            //service.updateData("EOSUSDT", startTime, 60, 1000);
+            //service.updateData("EOSUSDT",startTime,240,1000);
+            service.updateData("EOSUSDT", startTime, 1440, 1000);
 
             System.exit(0);
         } catch (BeansException e) {

@@ -8,7 +8,8 @@ import org.springframework.web.client.RestTemplate;
 
 @RestController
 public class ApiController {
-    //Convert JSON to string in get method
+
+    //GET method as limit
     @GetMapping
     public String GetDataFromAPI(String symbol, long startTime, String interval, int limit) throws BusinessIntegrityException {
         try {
@@ -21,11 +22,9 @@ public class ApiController {
         } catch (RestClientException e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
-
     }
 
-
-
+    //Get method without limit
     public String GetDataFromAPIWithoutLimit(String symbol, long startTime, String interval) throws BusinessIntegrityException {
         try {
             String url = "https://api.binance.com/api/v3/klines?symbol=" + symbol
@@ -36,9 +35,6 @@ public class ApiController {
         } catch (RestClientException e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
-
-
     }
-
 
 }

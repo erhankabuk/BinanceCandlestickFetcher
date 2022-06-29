@@ -10,7 +10,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -24,77 +23,49 @@ public class ServiceLayer {
 
     public void updateData(String symbol, long startTime, int interval, int limit) throws BusinessIntegrityException {
 
+        //Check folder created before
         String basePath = checkFolder(symbol, interval);
+        //Check File created before
         String fileName = getFileNameByTimeAndInterval(basePath, symbol, interval, startTime);
+        //Converted interval for GET request
         String convertedInterval = convertIntervalFromIntToString(interval);
-
-
-        if (interval > 1 && interval < 240) {
-//ilk önce dosya yoksa ilk günü ekleyecek.
-            //Sorguna 1000 adet veri var bunu gün başlarına göre bölmem lazım.
-            //Eğer sonraki gün başına gelmişse yeni dosyada kaydetmeli.
-
-
-        } else if (interval >= 240) {
 
             boolean checkLoop = true;
             while (checkLoop) {
                 if (!isFileExist(fileName)) {
-                    String createdFile = createFile(fileName);
+                    //Call request
                     String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
                     if (response != "[]") {
-                        saveDataInFile(createdFile, response);
+                        saveDataInFile(createFile(fileName), response);
                     } else {
-                       String responseWithoutLimit = apiController.GetDataFromAPIWithoutLimit(symbol, startTime, convertedInterval);
-                        saveDataInFile(createdFile, responseWithoutLimit);
+                        // If currency has smaller limit than 1000 response returns "[]". So call request without limit.
+                        String responseWithoutLimit = apiController.GetDataFromAPIWithoutLimit(symbol, startTime, convertedInterval);
+                        //Save data in file
+                        saveDataInFile(createFile(fileName), responseWithoutLimit);
                     }
                 } else {
+                    //If there is already some data in file...
+                    //Find endTime of last value
                     long endTime = getLastEndTimeAsNewStartTime(fileName);
+                    //Find present time
                     long beginningOfToday = convertLocalDateTimeToEpoch(
                             LocalDateTime.now().atZone(ZoneId.systemDefault()).toLocalDateTime().with(LocalTime.MIN)
                     );
+
                     while (endTime <= beginningOfToday) {
                         String response = apiController.GetDataFromAPI(symbol, endTime, convertedInterval, limit);
                         if (response != "[]") {
                             saveDataInFile(fileName, response);
+                            //Update endtime as next startTime
                             endTime = getLastEndTimeAsNewStartTime(fileName);
                         }
                     }
-
-                checkLoop = false;
+                    checkLoop = false;
                 }
-
             }
-        }
-/*
-        if (!isFileExist(fileName)) {
-            String response = apiController.GetDataFromAPI(symbol, startTime, convertedInterval, limit);
-            if (response != "[]") {
-                String createdFile = createFile(fileName);
-                saveDataInFile(createdFile, response);
-            }
-            //How loop wil be stoped?
-        } else {
-            // Data Integrity
-            // Önce veriyi çek
-            // Verinin son indexinin endTimeına bak.
-            // ilk verinin startTimeını al calculateendtime ını al
-            //eğer calculatedEndTime-1 ==endtime ise yeni dosyada endTime ile veriyi çeksin
-            // değilse endtimedan calculatedtime-1 e kadarki veriyi o günkü dosyaya kaydet
-            //1m de 1440 veri var 4h ye kadar günlük tek sorgu dosyaya kaydediyor.4h sonrası tek dosyada
 
-            //4h sonrası için
-
-            System.out.println(fileName + " existed");
-            //String convertedInterval = convertIntervalFromIntToString(interval);
-
-            String response = apiController.GetDataFromAPI(symbol, getLastEndTimeAsNewStartTime(fileName), convertedInterval, limit);
-            if (response != "[]") {
-                saveDataInFile(fileName, response);
-            }
-        }
-  */
     }
+
 
     //Save HttpResponse Data in File
     public void saveDataInFile(String filePath, String response) throws BusinessIntegrityException {
@@ -106,8 +77,7 @@ public class ServiceLayer {
             //Convert string to JsonArray
             JsonArray jsonArrayFromContentInFiles = new Gson().fromJson(contentInFiles, JsonArray.class);
             JsonArray jsonArrayOfResponse = new Gson().fromJson(response, JsonArray.class);
-            System.out.println("Data in file: " + jsonArrayFromContentInFiles);
-            System.out.println("Response: " + jsonArrayOfResponse);
+
             //Write data to file
             if (jsonArrayFromContentInFiles != null) {
                 for (JsonElement data : jsonArrayOfResponse) {
@@ -115,10 +85,8 @@ public class ServiceLayer {
                 }
                 writeDataToFile(path, jsonArrayFromContentInFiles);
             } else {
-
                 writeDataToFile(path, jsonArrayOfResponse);
             }
-            System.out.println("Updated data in file: " + jsonArrayFromContentInFiles);
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
@@ -135,7 +103,6 @@ public class ServiceLayer {
     }
 
     //Check files for lastEndTime
-    //C:\Users\erhan\IdeaProjects\BinanceCandlestickFetcher\EOSUSDT\EOSUSDT-240\EOSUSDT-240 2022-06-22
     public long getLastEndTimeAsNewStartTime(String filePath) throws BusinessIntegrityException {
         try {
             //Get file content
@@ -148,7 +115,6 @@ public class ServiceLayer {
             JsonElement jsonElement = jsonArray.get(lastIndexOfJsonArray).getAsJsonArray().get(6);
             //Convert jsonelement to long
             long startTime = jsonElement.getAsLong();
-            System.out.println("Last: " + startTime);
             return startTime;
         } catch (IOException e) {
             throw new BusinessIntegrityException(e.getMessage());
@@ -184,14 +150,14 @@ public class ServiceLayer {
     }
 
     //Converts Epoch to DateTime
-    public LocalDateTime convertEpochToLocalDateTime(long epochTime) {
-        System.out.println("gelen long epoch" + epochTime);
-        //todo longdan locale çevirmiyor aşağısı onu çevir
-
-        LocalDateTime ldt = Instant.ofEpochMilli(epochTime)
-                .atZone(ZoneId.systemDefault()).toLocalDateTime();
-        System.out.println("converted" + ldt);
-        return ldt;
+    public LocalDateTime convertEpochToLocalDateTime(long epochTime) throws BusinessIntegrityException {
+        try {
+            LocalDateTime convertedEpochToLocalDateTime = Instant.ofEpochMilli(epochTime)
+                    .atZone(ZoneId.systemDefault()).toLocalDateTime();
+            return convertedEpochToLocalDateTime;
+        } catch (Exception e) {
+            throw new BusinessIntegrityException(e.getMessage());
+        }
     }
 
     //Create FileName
@@ -200,7 +166,6 @@ public class ServiceLayer {
             LocalDateTime start = convertEpochToLocalDateTime(startTime);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String createdTime = start.atZone(ZoneId.systemDefault()).format(formatter);
-            System.out.println(createdTime);
             return basePath + "\\" + symbol + "-" + interval + " " + createdTime;
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
@@ -218,7 +183,6 @@ public class ServiceLayer {
                 File fileHourly = new File(file.getAbsolutePath(), fileNameHourly);
                 fileHourly.mkdirs();
                 return fileHourly.getAbsolutePath();
-
             }
 
             String fileNameHourly = symbol + "-" + interval;
@@ -227,41 +191,16 @@ public class ServiceLayer {
                 fileHourly.mkdirs();
             }
             return fileHourly.getAbsolutePath();
-
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
         }
     }
-
-    //Gets endTime from startTime as LocalDateTime
-    public LocalDateTime calculateEndTime(int interval, String startTime, int limit) throws BusinessIntegrityException {
-        try {
-
-            LocalDateTime base = LocalDateTime.parse(startTime);
-            LocalDateTime start = base.with(LocalDateTime.MIN);
-            LocalDateTime end = base.with(LocalDateTime.MAX);
-            System.out.println("Start : " + start);
-            System.out.println("End : " + end);
-
-            if (interval == 1) {
-                //Add 1.44
-                return start.plusMinutes(limit);
-            }
-
-            return base.with(LocalDateTime.MAX);
-        } catch (Exception e) {
-            throw new BusinessIntegrityException(e.getMessage());
-        }
-    }
-
 
     //Converts any LocalDateTime to Epoch
     public long convertLocalDateTimeToEpoch(LocalDateTime time) throws BusinessIntegrityException {
         try {
-            System.out.println("End : " + time);
             Instant instant = time.atZone(ZoneId.systemDefault()).toInstant();
             long convertedTime = instant.toEpochMilli();
-            System.out.println("ConvertedTime : " + convertedTime);
             return convertedTime;
         } catch (Exception e) {
             throw new BusinessIntegrityException(e.getMessage());
