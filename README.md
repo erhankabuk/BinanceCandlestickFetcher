@@ -7,4 +7,4 @@
 * Use limit max 1000
 * Instance => service.updateData("EOSUSDT", startTime, 1440, 1000); 
 * Run project
-* Files will be in "database/" folder
+* Files will be under "database/" folder
